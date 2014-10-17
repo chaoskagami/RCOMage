@@ -28,6 +28,7 @@
 #include "rcomain.h"
 #include "xml.h"
 #include "strfuncs.h"
+#include "gimtool.h"
 
 #include "rcodump.h"
 #include "vaghandler.h"
@@ -198,6 +199,109 @@ dump_output_gimconv (char *dest, void *buf, rRCOEntry * entry, void *arg)
 }
 
 uint8_t
+dump_output_gimtool_exp (char *dest, void *buf, rRCOEntry *entry, void* arg)
+{
+  char tmpName[255];
+  static uint32_t successes = 0, failures = 0;
+  uint8_t ret;
+
+  if (failures <= 5 || successes > 0) {
+
+    get_temp_fname (tmpName, "gim");
+
+    FILE *fp = fopen (tmpName, "wb");
+
+    if (!fp)
+      return FALSE;
+
+    // try to apply gim patch
+    if (entry->srcLenUnpacked > 0x28) {
+      // dirty code - we'll leave here, since the internal converter will have
+      // nicer code :P
+      uint32_t *i32;
+      uint8_t es = FALSE;
+
+      i32 = (uint32_t *) buf;
+      if (*i32 == 0x4D49472E)
+	es = TRUE;		// .GIM
+
+      if (*i32 == 0x2E47494D || *i32 == 0x4D49472E) {
+	uint16_t i, i2;
+
+	i = *(uint16_t *) ((char *) buf + 0x10);
+	i2 = *(uint16_t *) ((char *) buf + 0x20);
+	if (es) {
+	  i = ENDIAN_SWAP (i);
+	  i2 = ENDIAN_SWAP (i2);
+	}
+	if (i == 2 && i2 == 3) {
+	  uint32_t sz = *(uint32_t *) ((char *) buf + 0x14), sz2;
+
+	  i32 = (uint32_t *) ((char *) buf + 0x24);
+	  sz2 = *i32;
+	  if (es) {
+	    sz = ENDIAN_SWAP (sz);
+	    sz2 = ENDIAN_SWAP (sz2);
+	  }
+	  if (sz - 0x10 != sz2) {
+	    info ("Note: Applied GIM patch when using Gimtool-exp to dump '%s'.",
+		dest);
+	    sz2 = sz - 0x10;
+	    if (es)
+	      sz2 = ENDIAN_SWAP (sz2);
+	    *i32 = sz2;
+	  }
+	}
+      }
+    }
+
+    filewrite (fp, buf, entry->srcLenUnpacked);
+    fclose (fp);
+
+	int tmppos;
+	for(tmppos=0; tmppos < strlen(dest); tmppos++) {
+		if(dest[tmppos] == '.' && (strlen(dest) - tmppos) > 3 && dest[tmppos+1] == 'g' && dest[tmppos+2] == 'i' && dest[tmppos+3] == 'm') {
+			dest[tmppos+1] = 'b';
+			dest[tmppos+2] = 'm';
+			dest[tmppos+3] = 'p';
+
+			break;
+		}
+	}
+
+    ret = ! GIMToBMP(tmpName, dest);
+
+    remove (tmpName);
+
+    if (!ret) {
+      warning
+	  ("gimtool-exp failed to process GIM.  Resource being dumped as GIM instead.");
+      failures++;
+      if (failures > 5 && successes == 0) {
+	warning
+	    ("Gimtool-exp failed too many times without success - disabling Gimtool-exp (GIMs will not be converted).");
+      }
+    }
+  } else
+    ret = FALSE;
+
+  if (!ret) {
+    char tmpDest[260];
+
+    strcpy (tmpDest, dest);
+    char *dot = strrchr (tmpDest, '.');
+
+    if (!dot)
+      dot = tmpDest + strlen (tmpDest);
+    strcpy (dot, ".gim");
+
+    return dump_output_data (tmpDest, buf, entry, NULL);
+  } else
+    successes++;
+  return ret;
+}
+
+uint8_t
 dump_output_vsmxdec (char *dest, void *buf, rRCOEntry * entry, void *arg)
 {
   VsmxMem *vm = readVSMXMem (buf);
@@ -220,7 +324,7 @@ dump_output_vsmxdec (char *dest, void *buf, rRCOEntry * entry, void *arg)
 
 void
 dump_resources (char *labels, rRCOEntry * parent, const RcoTableMap extMap,
-    char *pathPrefix, void *outputFilterArg)
+    char *pathPrefix, void *outputFilterArg, int optional)
 {
   // TODO: remove text crap from this function
   if (!parent || !parent->numSubentries)
@@ -278,8 +382,12 @@ dump_resources (char *labels, rRCOEntry * parent, const RcoTableMap extMap,
 	of = dump_output_wav;
       else if (entry->id == RCO_TABLE_IMG &&
 	  ((rRCOImgModelEntry *) entry->extra)->format == RCO_IMG_GIM)
-	of = dump_output_gimconv;
+      of = dump_output_gimconv;
     }
+
+	if (optional == 1 && entry->id == RCO_TABLE_IMG &&
+	  ((rRCOImgModelEntry *) entry->extra)->format == RCO_IMG_GIM)
+      of = dump_output_gimtool_exp;
 
     info ("Dumping resource '%s'...", label);
 

@@ -183,6 +183,8 @@ main_help ()
 	  "                   gimconv command to execute; defaults to 'gimconv'.\n"
 	  "    --gimconv-flags <flags>\n"
 	  "                   Additional flags to pass to gimconv.\n"
+	  "    --gimtool-exp  (EXPERIMENTAL) Use a new internal GIM->BMP converter\n"
+	  "                   As fair warning, it currently has issues with some GIMs.\n"
 	  "    --conv-vag     Convert VAG files to WAV.\n"
 	  "    --decode-vsmx  Decode VSMX/JSX files to textual format.\n"
 	  "    --no-decomp-warn\n"
@@ -379,6 +381,7 @@ main_dump (void)
   RcoDumpGimconvOpts gimconvOpts;
   uint8_t sConvVag = FALSE;
   uint8_t sConvVsmx = FALSE;
+  uint8_t sGimtoolExp = FALSE;
 
   int i;
 
@@ -387,6 +390,7 @@ main_dump (void)
   retrieve_from_opts (TRUE, 13, "--output-txt", "bool", &sTextOutput,
       "--conv-gim", "text", &gimconvOpts.ext, "--gimconv-cmd", "text",
       &gimconvOpts.cmd, "--gimconv-flags", "text", &gimconvOpts.extFlags,
+      "--gimtool-exp", "bool", &sGimtoolExp,
       "--conv-vag", "bool", &sConvVag, "--decode-vsmx", "bool", &sConvVsmx,
       "--resdir", "text", &sResDir, "--images", "text", &sResImgDir, "--sounds",
       "text", &sResSndDir, "--models", "text", &sResMdlDir, "--vsmx", "text",
@@ -396,7 +400,7 @@ main_dump (void)
 #ifndef WIN32
   if (gimconvOpts.ext) {
     warning
-	("gimconv support is only available on Windows, as stuff only gets compiled for that platform and Sony doesn't give away source code (duh).");
+	("gimconv support is only available on Windows, as hackers and sony don't seem to like linux tools. Try --gimtool-exp, which isn't complete and chokes on a lot of GIM files. It's better than nothing, right? ;P");
     gimconvOpts.ext = NULL;
   }
 #endif
@@ -452,18 +456,18 @@ main_dump (void)
 	if (!gimconvOpts.ext)
 	  arg = NULL;
 	dump_resources (rco->labels, rco->tblImage, RCOXML_TABLE_IMG_FMT,
-	    pathPrefix, arg);
+	    pathPrefix, arg, sGimtoolExp);
       }
       if (!sResSndDir || strcmp (sResSndDir, "-")) {
 	RCO_PRINT_PATH (pathPrefix, sResSndDir);
 	dump_resources (rco->labels, rco->tblSound, RCOXML_TABLE_SOUND_FMT,
-	    pathPrefix, (void *) sConvVag);
+	    pathPrefix, (void *) sConvVag, NULL);
 	sndDumped = TRUE;
       }
       if (!sResMdlDir || strcmp (sResMdlDir, "-")) {
 	RCO_PRINT_PATH (pathPrefix, sResMdlDir);
 	dump_resources (rco->labels, rco->tblModel, RCOXML_TABLE_MODEL_FMT,
-	    pathPrefix, NULL);
+	    pathPrefix, NULL, NULL);
       }
 
       if (!sResTxtDir || strcmp (sResTxtDir, "-")) {

@@ -21,7 +21,7 @@ typedef struct {
 uint8_t dump_resource (char *dest, rRCOEntry * entry, OutputDumpFunc outputfunc,
     void *outputfuncArg);
 void dump_resources (char *labels, rRCOEntry * parent, const RcoTableMap extMap,
-    char *pathPrefix, void *outputFilterArg);
+    char *pathPrefix, void *outputFilterArg, int optional);
 void dump_text_resources (char *labels, rRCOEntry * parent, uint8_t writeHeader,
     char *pathPrefix, uint8_t bWriteXML);
 uint8_t dump_output_data (char *dest, void *buf, rRCOEntry * entry, void *arg);

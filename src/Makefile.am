@@ -38,7 +38,9 @@ rcomage_SOURCES = \
 		vsmx.c \
 		vsmx.h \
 		rlzpack.h \
-		strfuncs.h
+		strfuncs.h \
+		gimtool.c \
+		gimtool.h
 
 
 rcomage_LDADD = $(top_builddir)/7z/lib7z.la \

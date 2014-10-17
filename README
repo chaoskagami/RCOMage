@@ -1,10 +1,14 @@
-Rcomage v1.1.1 readme
-written by ZiNgA BuRgA
+Rcomage v1.1.1-fork readme
+Originally written by ZiNgA BuRgA
+Modification - chaoskagami
 
-URL: http://endlessparadigm.com/forum/showthread.php?tid=19501
+Go here for ZB's version: http://endlessparadigm.com/forum/showthread.php?tid=19501
 
+ What's changed since the original
+ ---------------------
+See the changelog. I'm unofficially performing some maintainance.
 
- Introduction
+ Introduction (original)
  ------------
 Rcomage is a general purpose RCO creation/manipulation tool.  It is designed to allow RCOs to be modified in almost any way, and intended to replace my previous application, RCO Editor.  Rcomage should also generate almost fully "compliant" resource files (very similar to original Sony RCOs).
 RCO files are resource files that can be found in the PSP's flash0:/vsh/resource directory which contain stuff like icon data and various other resource components.  RCOs can also be found on UMD Video/Audio discs, where they are used to supply resources to the menus.
@@ -56,23 +60,26 @@ RcoFile - XML root element; generally does not need to be modified
 
 
 
- Planned Features
+ Planned Features (experimental)
  ----------------
+- internal BMP <-> GIM converter (EXPERIMENTAL - Can dump some GIMs to BMP albeit very badly. Output is broken in many cases. I'm working on it. -chaoskagami)
+- Linux GUI code - currently only has a GUI on windows. Not specifically necessary.
 - better sanity checks and error handling
-- giant cleanup of code (so I can release it later and allow Linux users to compile it)
-- RLZ compression/decompression
 - better information displays
-- internal BMP <-> GIM converter
 - documentation of RCOXML format as well as the RCO file format
-- more functions (rather than just "dump" and "compile" etc)
 - discovery of various "unknown" values
-- anything not on my mind right now
+
+
+ Things which were listed as planned but appear to be implemented
+ --------------------------------------------
+- General Linux support. Of course, without a GUI or GimConv.
+- more functions (rather than just "dump" and "compile" etc)
 
 
  Notes
  -----
 - RCO Editor doesn't write adler32 checksums when compressing images (yes, stupid stupid me) so anything edited with RCOEdit will generate a warning when you try to dump it; use --no-decomp-warn flag to suppress warnings (the GUI automatically does this)
-- Sony's Gimconv is a little slow, so if you're dumping and converting GIMs, be a little patient (yes, I really did not write gimconv)
+- Sony's Gimconv is a little slow, so if you're dumping and converting GIMs, be a little patient. Also, linux users only get --gimtool-exp. Sony never gives out source, y'know?
 - what was referred to as "page" in RCOEdit is now called "object"
 - conversions (such as WAV<->VAG or PNG<->GIM) may be lossy!
 - a recent update_plugin.rco decompressed with Resurssiklunssi will generate a warning due to Sony deciding not to compress a particular icon in it, in turn, changing the structure a bit, which Resurssiklunssi wasn't designed to handle, so generates a "bad" RCO; recompiling the RCO with Rcomage will fix this issue however
@@ -82,6 +89,7 @@ RcoFile - XML root element; generally does not need to be modified
 
  Credits
  -------
+- ZingaBuRga for the original version of this tool; why he stopped development is beyond me.
 - highboy for his WAV <-> VAG conversion sample code
 - Z33 for sample GIM handling code and his various RCO tools as well as guides/investigations on various file formats
 - creators of 7-zip for their awesome implementation of deflate

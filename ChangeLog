@@ -1,6 +1,9 @@
 RCOMage Changelog:
 
-Current development version
+Dev Version
+ - Experimental GIM -> BMP support. It works horribly, be very surprised if you get something usable at the moment.
+
+ZingaBurga Dev version (Last commit - 4y ago)
  - Update INIs - this will change the XML format and may cause incompatibilities with XMLs dumped from earlier versions
  - Enable RLZ compression (no decompression support at the moment)
  - Some bug fixes and changes with VSMX handling

@@ -71,12 +71,12 @@ void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height) {
 	bmp_inh.colors = 0;
 	bmp_inh.important_col = 0;
 	bmp_inh.redmask = 0;
-	((uint8_t*)&bmp_inh.redmask)[0] = 0xff;
-	bmp_inh.bluemask = 0;
-	((uint8_t*)&bmp_inh.bluemask)[1] = 0xff;
 	bmp_inh.greenmask = 0;
-	((uint8_t*)&bmp_inh.greenmask)[2] = 0xff;
+	bmp_inh.bluemask = 0;
 	bmp_inh.alphamask = 0;
+	((uint8_t*)&bmp_inh.redmask)[0] = 0xff;
+	((uint8_t*)&bmp_inh.greenmask)[1] = 0xff;
+	((uint8_t*)&bmp_inh.bluemask)[2] = 0xff;
 	((uint8_t*)&bmp_inh.alphamask)[3] = 0xff;
 	bmp_inh.colsptype = 0x206E6957;
 	bmp_inh.reserved0 = bmp_inh.reserved1 = bmp_inh.reserved2 = bmp_inh.reserved3 = bmp_inh.reserved4 = bmp_inh.reserved5 = bmp_inh.reserved6 = bmp_inh.reserved7 = bmp_inh.reserved8 = 0;

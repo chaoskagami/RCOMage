@@ -54,7 +54,7 @@ typedef struct {
 	uint8_t* data;
 } OutData;
 
-uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp);
+uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp, int fix);
 void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height);
 
 uint8_t* decode_Rgb565(uint8_t* data, int width, int height);

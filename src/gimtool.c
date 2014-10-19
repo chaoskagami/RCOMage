@@ -17,19 +17,20 @@
 
 #include "gimtool.h"
 
-uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp) {
+uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp, int fix) {
 	width = (width * bpp) >> 3;
 
 	uint8_t* dest = (uint8_t*)calloc(sizeof(uint8_t), width*height);
 
 	int rowblocks = (width / 16);
 
-	int dstoff = 0;
+	int dst_y = 0, dst_x = 0;
 
 	int x, y;
 
 	for (y = 0; y < height; y++)
 	{
+		dst_x = 0;
 		for (x = 0; x < width; x++)
 		{
 			int blockX = x / 16;
@@ -38,9 +39,12 @@ uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp) {
 			int blockIndex = blockX + ((blockY) * rowblocks);
 			int blockAddress = blockIndex * 16 * 8;
 
-			dest[dstoff] = data[blockAddress + ((x - blockX * 16)) + ((y - blockY * 8) * 16)];
-			dstoff++;
+			int dstoff = dst_x + ( dst_y * width );
+
+			dest[dstoff] = data[blockAddress + (x - blockX * 16) + ((y - blockY * 8) * 16)];
+			dst_x++;
 		}
+		dst_y++;
 	}
 
 	return dest;
@@ -49,7 +53,7 @@ uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp) {
 void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height) {
 
 	// Bitmaps are bottom-up for rows - so first thing's first.
-	uint8_t* data_new = (char*)calloc(sizeof(char), width*height*4);
+	uint8_t* data_new = (uint8_t*)calloc(sizeof(uint8_t*), width*height*4);
 	// FLIP IT.
 	int i;
 	for(i=0; i<height; i++) {
@@ -74,9 +78,9 @@ void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height) {
 	bmp_inh.greenmask = 0;
 	bmp_inh.bluemask = 0;
 	bmp_inh.alphamask = 0;
-	((uint8_t*)&bmp_inh.redmask)[0] = 0xff;
+	((uint8_t*)&bmp_inh.redmask)[0]   = 0xff;
 	((uint8_t*)&bmp_inh.greenmask)[1] = 0xff;
-	((uint8_t*)&bmp_inh.bluemask)[2] = 0xff;
+	((uint8_t*)&bmp_inh.bluemask)[2]  = 0xff;
 	((uint8_t*)&bmp_inh.alphamask)[3] = 0xff;
 	bmp_inh.colsptype = 0x206E6957;
 	bmp_inh.reserved0 = bmp_inh.reserved1 = bmp_inh.reserved2 = bmp_inh.reserved3 = bmp_inh.reserved4 = bmp_inh.reserved5 = bmp_inh.reserved6 = bmp_inh.reserved7 = bmp_inh.reserved8 = 0;
@@ -99,6 +103,23 @@ void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height) {
 	fwrite(&bmp_inh, 1, sizeof(bitmapv4_header), out);
 	fwrite(data_new, 1, (width*4*height), out);
 	fclose(out);
+}
+
+// Crop rows
+uint8_t* crop(uint8_t* data, int width_in, int height_in, int width_out, int height_out) {
+	uint8_t* newData = (uint8_t*)calloc(sizeof(uint8_t), width_out * height_out * 4);
+
+	int x, y;
+	for(y=0; y < height_out; y++) {
+		for(x=0; x < width_out*4; x++) {
+			int in = (y * width_in*4) + x;
+			int out = (y * width_out*4) + x;
+
+			newData[out] = data[in];
+		}
+	}
+
+	return newData;
 }
 
 // Used for palletes too.
@@ -222,7 +243,7 @@ OutData* ReadData(uint8_t* data, int length) {
 	int32_t prevOffset = offset;
 	int32_t textureOffset = 0;
 	int32_t palleteOffset = 0;
-	uint16_t width = 0, height = 0, widthOff = 0, heightOff = 0;
+	uint16_t width = 0, height = 0;
 	uint8_t datFmt = Unknown;
 	uint8_t palFmt = Unknown;
 	uint16_t pal_ents = 0;
@@ -348,31 +369,38 @@ OutData* ReadData(uint8_t* data, int length) {
 	printf("GIM->BMP (");
 	fflush(stdout);
 
-	// FIXME - Swizzle code is apparently incorrect. Blocks end up shifted wrong.
+	// FIXME - Swizzle code is apparently incorrect. Blocks end up shifted wrong with >8bpp.
+
+	int original_width  = width;
+	int original_height = height;
 
 	if (width % 16 != 0)
 		width += 16 - (width % 16);
 	if (height % 8 != 0)
 		height += 8 - (height % 8);
 
+	//printf("Fix +[%d, %d], ", width - original_width, height - original_height);
+
 	if(swizzled) {
 		printf("SWIZ, ");
 		fflush(stdout);
+
+		//int fix = original_width % 16;
 
 		switch (datFmt) {
 			case Rgb565:
 			case Argb1555:
 			case Argb4444:
-				texture_data = unswizzle(texture_data, width, height, 16);
+				texture_data = unswizzle(texture_data, width, height, 16, 0);
 				break;
 			case Argb8888:
-				texture_data = unswizzle(texture_data, width, height, 32);
+				texture_data = unswizzle(texture_data, width, height, 32, 0);
 				break;
 			case Index4:
-				texture_data = unswizzle(texture_data, width, height, 4);
+				texture_data = unswizzle(texture_data, width, height, 4, 0);
 				break;
 			case Index8:
-				texture_data = unswizzle(texture_data, width, height, 8);
+				texture_data = unswizzle(texture_data, width, height, 8, 0);
 				break; 
 		}
 	}
@@ -414,7 +442,7 @@ OutData* ReadData(uint8_t* data, int length) {
 					break;
 				case Argb8888:
 					printf("4bpp, ARGB8888)");
-					palData = unswizzle(decode_Argb8888(&data[palleteOffset], 16, 1), 16, 1, 32);
+					palData = decode_Argb8888(&data[palleteOffset], 16, 1);
 					break;
 			}
 			newData = decode_Index4(texture_data, palData, width, height);			
@@ -450,9 +478,9 @@ OutData* ReadData(uint8_t* data, int length) {
 
 	OutData* out = (OutData*)calloc(sizeof(OutData), 1);
 
-	out->data = newData;
-	out->width = width+widthOff;
-	out->height = height+heightOff;
+	out->data = crop(newData, width, height, original_width, original_height);
+	out->width = original_width;
+	out->height = original_height;
 
 	return out;
 }

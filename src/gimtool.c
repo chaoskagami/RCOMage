@@ -17,10 +17,10 @@
 
 #include "gimtool.h"
 
-char* unswizzle(char* data, int width, int height, int bpp) {
-	width = (width * bpp) / 8;
+uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp) {
+	width = (width * bpp) >> 3;
 
-	char* dest = (char*)calloc(sizeof(char), width*height);
+	uint8_t* dest = (uint8_t*)calloc(sizeof(uint8_t), width*height);
 
 	int rowblocks = (width / 16);
 
@@ -38,7 +38,7 @@ char* unswizzle(char* data, int width, int height, int bpp) {
 			int blockIndex = blockX + ((blockY) * rowblocks);
 			int blockAddress = blockIndex * 16 * 8;
 
-			dest[dstoff] = data[blockAddress + (x - blockX * 16) + ((y - blockY * 8) * 16)];
+			dest[dstoff] = data[blockAddress + ((x - blockX * 16)) + ((y - blockY * 8) * 16)];
 			dstoff++;
 		}
 	}
@@ -46,10 +46,10 @@ char* unswizzle(char* data, int width, int height, int bpp) {
 	return dest;
 }
 
-void dump_bitmap(char* fname, char* data32bpp, int width, int height) {
+void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height) {
 
 	// Bitmaps are bottom-up for rows - so first thing's first.
-	char* data_new = (char*)calloc(sizeof(char), width*height*4);
+	uint8_t* data_new = (char*)calloc(sizeof(char), width*height*4);
 	// FLIP IT.
 	int i;
 	for(i=0; i<height; i++) {
@@ -71,13 +71,13 @@ void dump_bitmap(char* fname, char* data32bpp, int width, int height) {
 	bmp_inh.colors = 0;
 	bmp_inh.important_col = 0;
 	bmp_inh.redmask = 0;
-	((char*)&bmp_inh.redmask)[0] = 0xff;
+	((uint8_t*)&bmp_inh.redmask)[0] = 0xff;
 	bmp_inh.bluemask = 0;
-	((char*)&bmp_inh.bluemask)[1] = 0xff;
+	((uint8_t*)&bmp_inh.bluemask)[1] = 0xff;
 	bmp_inh.greenmask = 0;
-	((char*)&bmp_inh.greenmask)[2] = 0xff;
+	((uint8_t*)&bmp_inh.greenmask)[2] = 0xff;
 	bmp_inh.alphamask = 0;
-	((char*)&bmp_inh.alphamask)[3] = 0xff;
+	((uint8_t*)&bmp_inh.alphamask)[3] = 0xff;
 	bmp_inh.colsptype = 0x206E6957;
 	bmp_inh.reserved0 = bmp_inh.reserved1 = bmp_inh.reserved2 = bmp_inh.reserved3 = bmp_inh.reserved4 = bmp_inh.reserved5 = bmp_inh.reserved6 = bmp_inh.reserved7 = bmp_inh.reserved8 = 0;
 	bmp_inh.gamma_r = 0;
@@ -102,10 +102,10 @@ void dump_bitmap(char* fname, char* data32bpp, int width, int height) {
 }
 
 // Used for palletes too.
-char* decode_Rgb565(char* data, int width, int height) {
+uint8_t* decode_Rgb565(uint8_t* data, int width, int height) {
 	int size = (width * height);
 
-	char* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
+	uint8_t* output = (uint8_t*)calloc(sizeof(uint8_t), 4*size); // 32bpp so 4
 
 	// Cast data to a ushort pointer.
 	uint16_t* pointer = (uint16_t*)data;
@@ -113,72 +113,72 @@ char* decode_Rgb565(char* data, int width, int height) {
 	int i;
 	for(i=0; i < size; i++) {
 		output[i*4 + 3] = 0xFF;
-		output[i*4 + 2] = (char)(((pointer[i] >> 0)  & 0x1F) * 0xFF / 0x1F);
-		output[i*4 + 1] = (char)(((pointer[i] >> 5)  & 0x3F) * 0xFF / 0x3F);
-		output[i*4 + 0] = (char)(((pointer[i] >> 11) & 0x1F) * 0xFF / 0x1F);
+		output[i*4 + 2] = (uint8_t)(((pointer[i] >> 0)  & 0x1F) * 0xFF / 0x1F);
+		output[i*4 + 1] = (uint8_t)(((pointer[i] >> 5)  & 0x3F) * 0xFF / 0x3F);
+		output[i*4 + 0] = (uint8_t)(((pointer[i] >> 11) & 0x1F) * 0xFF / 0x1F);
 	}
 
 	return output;
 }
 
-char* decode_Argb1555(char* data, int width, int height) {
+uint8_t* decode_Argb1555(uint8_t* data, int width, int height) {
 	int size = (width * height);
 
-	char* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
+	uint8_t* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
 
 	// Cast data to a ushort pointer.
 	uint16_t* pointer = (uint16_t*)data;
 	
 	int i;
 	for(i=0; i < size; i++) {
-		output[i*4 + 3] = (char)(((pointer[i] >> 15) & 0x01) * 0xFF);
-		output[i*4 + 2] = (char)(((pointer[i] >> 0)  & 0x1F) * 0xFF / 0x1F);
-		output[i*4 + 1] = (char)(((pointer[i] >> 5)  & 0x1F) * 0xFF / 0x1F);
-		output[i*4 + 0] = (char)(((pointer[i] >> 10) & 0x1F) * 0xFF / 0x1F);
+		output[i*4 + 3] = (uint8_t)(((pointer[i] >> 15) & 0x01) * 0xFF);
+		output[i*4 + 2] = (uint8_t)(((pointer[i] >> 0)  & 0x1F) * 0xFF / 0x1F);
+		output[i*4 + 1] = (uint8_t)(((pointer[i] >> 5)  & 0x1F) * 0xFF / 0x1F);
+		output[i*4 + 0] = (uint8_t)(((pointer[i] >> 10) & 0x1F) * 0xFF / 0x1F);
 	}
 
 	return output;
 }
 
-char* decode_Argb4444(char* data, int width, int height) {
+uint8_t* decode_Argb4444(uint8_t* data, int width, int height) {
 	int size = (width * height);
 
-	char* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
+	uint8_t* output = (uint8_t*)calloc(sizeof(uint8_t), 4*size); // 32bpp so 4
 
 	// Cast data to a ushort pointer.
 	uint16_t* pointer = (uint16_t*)data;
 
 	int i;
 	for(i=0; i < size; i++) {
-		output[i*4 + 3] = (char)(((pointer[i] >> 12) & 0x0F) * 0xFF / 0x0F);
-		output[i*4 + 2] = (char)(((pointer[i] >> 0)  & 0x0F) * 0xFF / 0x0F);
-		output[i*4 + 1] = (char)(((pointer[i] >> 4)  & 0x0F) * 0xFF / 0x0F);
-		output[i*4 + 0] = (char)(((pointer[i] >> 8)  & 0x0F) * 0xFF / 0x0F);
+		output[i*4 + 3] = (uint8_t)(((pointer[i] >> 12) & 0x0F) * 0xFF / 0x0F);
+		output[i*4 + 2] = (uint8_t)(((pointer[i] >> 0)  & 0x0F) * 0xFF / 0x0F);
+		output[i*4 + 1] = (uint8_t)(((pointer[i] >> 4)  & 0x0F) * 0xFF / 0x0F);
+		output[i*4 + 0] = (uint8_t)(((pointer[i] >> 8)  & 0x0F) * 0xFF / 0x0F);
 	}
 
 	return output;
 }
 
-char* decode_Argb8888(char* data, int width, int height) {
+uint8_t* decode_Argb8888(uint8_t* data, int width, int height) {
 	int size = (width * height);
 
-	char* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
+	uint8_t* output = (uint8_t*)calloc(sizeof(uint8_t), 4*size); // 32bpp so 4
 
 	int i;
 	for(i=0; i < size; i++) {
-		output[i*4+0] = data[i*4+0];
-		output[i*4+1] = data[i*4+1];
-		output[i*4+2] = data[i*4+2];
-		output[i*4+3] = data[i*4+3];
+		output[i*4 + 3] = data[i*4 + 3];
+		output[i*4 + 2] = data[i*4 + 2];
+		output[i*4 + 1] = data[i*4 + 1];
+		output[i*4 + 0] = data[i*4 + 0];
 	}
 
 	return output;
 }
 
-char* decode_Index4(char* data, char* palette, int width, int height) {
+uint8_t* decode_Index4(uint8_t* data, uint8_t* palette, int width, int height) {
 	int size = (width * height);
 
-	char* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
+	uint8_t* output = (uint8_t*)calloc(sizeof(uint8_t), 4*size); // 32bpp so 4
 
 	uint32_t* out = (uint32_t*)output;
 	uint32_t* pal = (uint32_t*)palette;
@@ -194,10 +194,10 @@ char* decode_Index4(char* data, char* palette, int width, int height) {
 	return output;
 }
 
-char* decode_Index8(char* data, char* palette, int width, int height) {
+uint8_t* decode_Index8(uint8_t* data, uint8_t* palette, int width, int height) {
 	int size = (width * height);
 
-	char* output = (char*)calloc(sizeof(char), 4*size); // 32bpp so 4
+	uint8_t* output = (uint8_t*)calloc(sizeof(uint8_t), 4*size); // 32bpp so 4
 
 	int i;
 	for(i=0; i < size; i++) {
@@ -207,10 +207,15 @@ char* decode_Index8(char* data, char* palette, int width, int height) {
 		output[i*4+3] = palette[data[i]*4+3];
 	}
 
+	// Debug palette
+	/* for (i=0; i<256; i++) {
+		printf("[%d] 0x%02x%02x%02x%02x\n", i, palette[i*4+0], palette[i*4+1], palette[i*4+2], palette[i*4+3]);
+	} */
+
 	return output;
 }
 
-OutData* ReadData(char* data, int length) {
+OutData* ReadData(uint8_t* data, int length) {
 
 	// Data Used Here
 	int32_t offset = 0x10;
@@ -218,8 +223,8 @@ OutData* ReadData(char* data, int length) {
 	int32_t textureOffset = 0;
 	int32_t palleteOffset = 0;
 	uint16_t width = 0, height = 0, widthOff = 0, heightOff = 0;
-	char datFmt = Unknown;
-	char palFmt = Unknown;
+	uint8_t datFmt = Unknown;
+	uint8_t palFmt = Unknown;
 	uint16_t pal_ents = 0;
 	int32_t eofOffset = 0;
 	int32_t hasMeta = 0;
@@ -245,7 +250,7 @@ OutData* ReadData(char* data, int length) {
 
 		// Texture Data Chunk
 		else if (data[offset] == 0x04) {
-			datFmt = (char)data[offset + 0x14];
+			datFmt = (uint8_t)data[offset + 0x14];
 
 			swizzled = ((uint16_t*)(&data[offset+0x16]))[0];
 
@@ -262,7 +267,7 @@ OutData* ReadData(char* data, int length) {
 
 		// Pallete Chunk
 		else if (data[offset] == 0x05) {
-			palFmt = (char)data[offset + 0x14];
+			palFmt = (uint8_t)data[offset + 0x14];
 
 			pal_ents = ((uint16_t*)(&data[offset+0x18]))[0];
 
@@ -338,57 +343,59 @@ OutData* ReadData(char* data, int length) {
 		return NULL;
 	}
 
-	char* texture_data = &data[textureOffset];
-
-	if (width % 16 != 0) {
-		widthOff = (16 - (width % 16));
-	}
-	if (height % 8 != 0) {
-		heightOff = (8 - (height % 8));
-	}
+	uint8_t* texture_data = &data[textureOffset];
 
 	printf("GIM->BMP (");
+	fflush(stdout);
+
+	// FIXME - Swizzle code is apparently incorrect. Blocks end up shifted wrong.
+
+	if (width % 16 != 0)
+		width += 16 - (width % 16);
+	if (height % 8 != 0)
+		height += 8 - (height % 8);
 
 	if(swizzled) {
 		printf("SWIZ, ");
+		fflush(stdout);
+
 		switch (datFmt) {
 			case Rgb565:
 			case Argb1555:
 			case Argb4444:
-				texture_data = unswizzle(texture_data, width+widthOff, height+heightOff, 16);
+				texture_data = unswizzle(texture_data, width, height, 16);
 				break;
 			case Argb8888:
-				texture_data = unswizzle(texture_data, width+widthOff, height+heightOff, 32);
+				texture_data = unswizzle(texture_data, width, height, 32);
 				break;
 			case Index4:
-				texture_data = unswizzle(texture_data, width+widthOff, height+heightOff, 4);
+				texture_data = unswizzle(texture_data, width, height, 4);
 				break;
 			case Index8:
-				texture_data = unswizzle(texture_data, width+widthOff, height+heightOff, 8);
+				texture_data = unswizzle(texture_data, width, height, 8);
 				break; 
 		}
 	}
 
-	char* newData = NULL;
-
-	char* palData = NULL;
+	uint8_t* newData = NULL;
+	uint8_t* palData = NULL;
 
 	switch (datFmt) {
 		case Rgb565:
 			printf("RGB565)");
-			newData = decode_Rgb565(texture_data, width+widthOff, height+heightOff);
+			newData = decode_Rgb565(texture_data, width, height);
 			break;
 		case Argb1555:
 			printf("ARGB1555)");
-			newData = decode_Argb1555(texture_data, width+widthOff, height+heightOff);
+			newData = decode_Argb1555(texture_data, width, height);
 			break;
 		case Argb4444:
 			printf("ARGB4444)");
-			newData = decode_Argb4444(texture_data, width+widthOff, height+heightOff);
+			newData = decode_Argb4444(texture_data, width, height);
 			break;
 		case Argb8888:
 			printf("ARGB8888)");
-			newData = decode_Argb8888(texture_data, width+widthOff, height+heightOff);
+			newData = decode_Argb8888(texture_data, width, height);
 			break;
 		case Index4:
 			// Extract pallete
@@ -407,11 +414,10 @@ OutData* ReadData(char* data, int length) {
 					break;
 				case Argb8888:
 					printf("4bpp, ARGB8888)");
-					palData = decode_Argb8888(&data[palleteOffset], 16, 1);
+					palData = unswizzle(decode_Argb8888(&data[palleteOffset], 16, 1), 16, 1, 32);
 					break;
 			}
-
-			newData = decode_Index4(texture_data, palData, width+widthOff, height+heightOff);			
+			newData = decode_Index4(texture_data, palData, width, height);			
 			break;
 		case Index8:
 			// Extract pallete
@@ -433,12 +439,14 @@ OutData* ReadData(char* data, int length) {
 					palData = decode_Argb8888(&data[palleteOffset], 256, 1);
 					break;
 			}
-			newData = decode_Index8(texture_data, palData, width+widthOff, height+heightOff);
+			newData = decode_Index8(texture_data, palData, width, height);
 			break;
 		case Unknown:
 			// Invalid format.
 			return NULL;
 	}
+
+	fflush(stdout);
 
 	OutData* out = (OutData*)calloc(sizeof(OutData), 1);
 
@@ -449,7 +457,7 @@ OutData* ReadData(char* data, int length) {
 	return out;
 }
 
-uint8_t GIMExport(char* data, size_t len, char* file_out) {
+uint8_t GIMExport(uint8_t* data, size_t len, char* file_out) {
 	// Convert to a more rational format.
 	OutData* data_converted = ReadData(data, len);
 
@@ -476,7 +484,7 @@ uint8_t GIMToBMP(char* file_in, char* file_out) {
 	fseek(input, 0, SEEK_SET);
 
 	// Read in RAW data.
-	char* input_data = (char*)calloc(sizeof(char), size);
+	uint8_t* input_data = (uint8_t*)calloc(sizeof(uint8_t), size);
 	fread(input_data, 1, size, input);
 
 	printf("gimtool-exp: %s, ", file_out);

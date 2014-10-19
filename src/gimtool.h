@@ -51,21 +51,21 @@ typedef struct __attribute__((packed)) {
 typedef struct {
 	int width;
 	int height;
-	char* data;
+	uint8_t* data;
 } OutData;
 
-char* unswizzle(char* data, int width, int height, int bpp);
-void dump_bitmap(char* fname, char* data32bpp, int width, int height);
+uint8_t* unswizzle(uint8_t* data, int width, int height, int bpp);
+void dump_bitmap(char* fname, uint8_t* data32bpp, int width, int height);
 
-char* decode_Rgb565(char* data, int width, int height);
-char* decode_Argb1555(char* data, int width, int height);
-char* decode_Argb4444(char* data, int width, int height);
-char* decode_Argb8888(char* data, int width, int height);
-char* decode_Index4(char* data, char* palette, int width, int height);
-char* decode_Index8(char* data, char* palette, int width, int height);
+uint8_t* decode_Rgb565(uint8_t* data, int width, int height);
+uint8_t* decode_Argb1555(uint8_t* data, int width, int height);
+uint8_t* decode_Argb4444(uint8_t* data, int width, int height);
+uint8_t* decode_Argb8888(uint8_t* data, int width, int height);
+uint8_t* decode_Index4(uint8_t* data, uint8_t* palette, int width, int height);
+uint8_t* decode_Index8(uint8_t* data, uint8_t* palette, int width, int height);
 
-OutData* ReadData(char* data, int length);
-uint8_t GIMExport(char* data, size_t len, char* file_out);
+OutData* ReadData(uint8_t* data, int length);
+uint8_t GIMExport(uint8_t* data, size_t len, char* file_out);
 uint8_t GIMToBMP(char* file_in, char* file_out);
 
 #endif
